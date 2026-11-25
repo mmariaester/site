@@ -1002,6 +1002,8 @@ function dragStart(event, d) {
   d.fx = d.x; d.fy = d.y;
 }
 function dragged(event, d) {
+  // A moved node should not retain its focus outline.
+  if (document.activeElement === this) this.blur();
   d.fx = event.x; d.fy = event.y;
 }
 function dragEnd(event, d) {
