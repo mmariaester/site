@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maria Ester Massari</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  :root {
+    --bg: #f2ede4;
+    --ink: #1a1a18;
+    --ink-light: #5a5a52;
+    --node-center: #1a1a18;
+    --node-uni: #3d4478;
+    --node-research: #7a4520;
+    --node-personal: #2d6b4a;
+    --node-contact: #8b2020;
+    --node-sub: #8c8c84;
+    --panel-bg: #ede8df;
+    --line: #c8c2b4;
+    --accent: #3d4478;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Space Mono', monospace;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  [hidden] { display: none !important; }
+
+  .site {
+    display: grid;
+    grid-template-columns: clamp(220px, 25vw, 300px) minmax(0, 1fr);
+    min-height: 100svh;
+  }
+
+  .profile {
+    display: flex;
+    flex-direction: column;
+    padding: 27px clamp(24px, 4vw, 48px);
+    border-right: 1px solid var(--line);
+  }
+
+  .profile .first, .profile .last {
+    display: block;
+    text-transform: uppercase;
+  }
+
+  .profile .first {
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.22em;
+    line-height: 1.4;
+  }
+
+  .profile .last {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    line-height: 1.1;
+  }
+
+  .profile p {
+    margin-top: 18px;
+    max-width: 48ch;
+    font: 18px/1.5 'Cormorant Garamond', Georgia, serif;
+    color: var(--ink-light);
+  }
+
+  .profile .profile-role {
+    margin-top: 12px;
+    font: 12px/1.5 'Space Mono', monospace;
+    color: var(--ink);
+  }
+
+  .profile-role + p { margin-top: 10px; }
+
+  .view-header {
+    display: flex;
+    justify-content: flex-end;
+    padding: 14px clamp(24px, 4vw, 48px);
+  }
+
+  #network-view {
+    display: grid;
+    grid-template-rows: minmax(370px, 1fr) auto;
+    min-height: calc(100svh - 72px);
+  }
+
+  #graph-container { position: relative; }
+
+  .network-footer {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding: 8px clamp(24px, 4vw, 48px) 10px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-light);
+  }
+
+  .network-footer h2, .network-note h2 {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .network-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    font-size: 10px;
+  }
+
+  .network-stats > div { display: flex; gap: 4px; }
+  .network-stats dd { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  .network-note {
+    margin-top: auto;
+    padding-top: 28px;
+    color: var(--ink-light);
+  }
+
+  .network-note p {
+    margin-top: 6px;
+    font: 17px/1.35 'Cormorant Garamond', Georgia, serif;
+  }
+
+  /* Toggle */
+  .toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--ink);
+    background: none;
+    border: 0;
+    min-height: 44px;
+    font-family: inherit;
+  }
+
+  .toggle-track {
+    width: 44px;
+    height: 24px;
+    background: var(--ink-light);
+    border-radius: 12px;
+    position: relative;
+  }
+
+  .toggle-thumb {
+    width: 18px;
+    height: 18px;
+    background: var(--bg);
+    border-radius: 50%;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .toggle-wrap[aria-pressed="true"] .toggle-track { background: var(--ink); }
+  .toggle-wrap[aria-pressed="true"] .toggle-thumb { left: 23px; }
+
+  /* ─── GRAPH CANVAS ─── */
+  #graph {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .link {
+    stroke: var(--ink);
+    stroke-width: 1.5;
+    opacity: 0.55;
+  }
+
+  .link.sub-link {
+    stroke: var(--ink-light);
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+    opacity: 0.4;
+  }
+
+  .node-circle {
+    cursor: pointer;
+    transition: r 0.2s;
+  }
+
+  .node-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    fill: var(--ink);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  .node-group:hover .node-circle {
+    opacity: 0.85;
+  }
+
+  .graph-controls {
+    position: absolute;
+    bottom: 14px;
+    inset-inline: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2px 24px;
+    pointer-events: none;
+  }
+
+  .hint {
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+  }
+
+  /* ─── SIDE PANEL ─── */
+  #panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(380px, 100%);
+    background: var(--panel-bg);
+    border-left: 1px solid var(--line);
+    padding: 76px 32px 36px;
+    z-index: 90;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .panel-category {
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 8px;
+  }
+
+  .panel-title {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 38px;
+    font-weight: 300;
+    line-height: 1.1;
+    color: var(--ink);
+    margin-bottom: 20px;
+  }
+
+  .panel-divider {
+    width: 32px;
+    height: 1px;
+    background: var(--ink);
+    opacity: 0.3;
+    margin-bottom: 24px;
+  }
+
+  .panel-body {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.75;
+    color: var(--ink);
+    opacity: 0.85;
+  }
+
+  .panel-body p { margin-bottom: 14px; }
+
+  .panel-body a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .panel-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .panel-tag {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border: 1px solid var(--line);
+    color: var(--ink-light);
+  }
+
+  .panel-close {
+    position: absolute;
+    top: 28px;
+    right: 28px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    opacity: 0.6;
+    padding: 8px;
+    transition: opacity 0.2s;
+  }
+
+  .panel-close:hover { opacity: 1; }
+
+  /* color dot in panel */
+  .panel-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+
+  #breadcrumb {
+    padding: 8px 0;
+    pointer-events: auto;
+    border: 0;
+    background: var(--bg);
+    font: 10px 'Space Mono', monospace;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    cursor: pointer;
+  }
+  #breadcrumb:hover { color: var(--ink); }
+  .node-group:focus-visible .node-circle { stroke: var(--ink); stroke-width: 2; }
+
+  .cv {
+    max-width: 850px;
+    padding: 4px clamp(24px, 5vw, 64px) 56px;
+  }
+  .cv h2 { margin-bottom: 24px; font: 400 38px/1.1 'Cormorant Garamond', Georgia, serif; }
+  .cv details { border-top: 1px solid var(--line); }
+  .cv details:last-child { border-bottom: 1px solid var(--line); }
+  .cv summary { cursor: pointer; padding: 12px 0; }
+  .cv summary::marker { color: var(--ink-light); }
+  .cv-group > summary { font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .cv-entries { padding: 0 0 14px 20px; }
+  .cv-entry > summary, .cv-project-name { font-size: 13px; }
+  .cv-project-name { padding: 6px 0; }
+  .cv-entry .panel-body { padding-bottom: 8px; }
+  .cv-entry .panel-tags { margin-bottom: 14px; }
+
+  @media (max-width: 680px) {
+    .site { display: block; }
+    .profile { border-right: 0; border-bottom: 1px solid var(--line); }
+    .view-header { padding-block: 8px; }
+    #network-view { grid-template-rows: max(350px, 49svh) auto; min-height: 0; }
+    .cv-entries { padding-left: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="site">
+  <aside class="profile" aria-label="About Maria Ester Massari">
+    <h1><span class="first">Maria Ester</span> <span class="last">Massari</span></h1>
+    <p class="profile-role">Information Science PhD Student</p>
+    <p>I’m interested in how people make sense of complex information. My projects explore how graphs, data science, and machine learning can help us understand systems such as transport networks and online markets.</p>
+    <section class="network-note" id="network-note" aria-labelledby="network-note-title" hidden>
+      <h2 id="network-note-title">About the network</h2>
+      <p>I made this network to show how my university work, research, and personal interests connect. Each branch opens into more specific topics.</p>
+    </section>
+  </aside>
+
+  <main>
+    <header class="view-header">
+      <button type="button" id="network-toggle" class="toggle-wrap" aria-pressed="false" aria-controls="network-view cv-view" hidden>
+        Network site
+        <span class="toggle-track" aria-hidden="true"><span class="toggle-thumb"></span></span>
+      </button>
+    </header>
+
+    <section id="network-view" aria-label="Interactive network" hidden>
+      <div id="graph-container">
+        <svg id="graph" aria-label="Profile network"></svg>
+        <div class="graph-controls">
+          <p class="hint">Drag to explore · click a node to expand</p>
+          <button type="button" id="breadcrumb" hidden>← Collapse all</button>
+        </div>
+
+        <aside id="panel" aria-labelledby="panel-title" hidden>
+          <button type="button" class="panel-close">✕ close</button>
+          <div id="panel-content"></div>
+        </aside>
+      </div>
+
+      <footer class="network-footer" aria-labelledby="network-stats-title">
+        <h2 id="network-stats-title">Visible network</h2>
+        <dl class="network-stats">
+          <div><dt>Nodes</dt><dd id="network-node-count"></dd></div>
+          <div><dt>Links</dt><dd id="network-link-count"></dd></div>
+          <div><dt title="Longest shortest path, measured in links">Diameter</dt><dd id="network-diameter"></dd></div>
+          <div><dt title="Share of all possible links that are present">Density</dt><dd id="network-density"></dd></div>
+        </dl>
+      </footer>
+    </section>
+
+    <section id="cv-view" class="cv" aria-labelledby="cv-title">
+      <h2 id="cv-title">Curriculum vitae</h2>
+      <div id="cv-sections"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────────
+const nodeContent = {
+  thesis: {
+    category: 'University · Research',
+    title: 'PhD Thesis',
+    color: '#3d4478',
+    body: `<p>Working on the intersection of <em>knowledge graphs</em> and human sensemaking in digital information environments.</p>
+    <p>Supervisor: Prof. [Name]. Expected completion: 2026.</p>`,
+    tags: ['Knowledge Graphs', 'Sensemaking', 'Information Science', 'HCI']
+  },
+  publications: {
+    category: 'University · Output',
+    title: 'Publications',
+    color: '#3d4478',
+    body: `<p><strong>Massari, M.E.</strong> et al. (2024). "Networked Epistemics in Digital Archives." <em>JASIST</em>.</p>
+    <p><strong>Massari, M.E.</strong> (2023). "Graph-based Navigation of Scientific Literature." <em>CHIIR '23</em>.</p>`,
+    tags: ['JASIST', 'CHIIR', 'Peer-reviewed']
+  },
+  courses: {
+    category: 'University · Teaching',
+    title: 'Courses & Teaching',
+    color: '#3d4478',
+    body: `<p>Teaching assistant for <em>Introduction to Information Science</em> and <em>Research Methods in HCI</em>.</p>
+    <p>Guest lecturer on network analysis and visualization for social scientists.</p>`,
+    tags: ['Information Science', 'HCI', 'Network Analysis']
+  },
+  lab: {
+    category: 'University · Affiliation',
+    title: 'Lab & Group',
+    color: '#3d4478',
+    body: `<p>Member of the <em>Information Spaces Lab</em> at [University Name].</p>
+    <p>Part of a cohort of 8 PhD students working across information retrieval, archival science, and computational methods.</p>`,
+    tags: ['Information Spaces Lab', 'PhD Cohort']
+  },
+  projects: {
+    category: 'Research · Applied',
+    title: 'Project Overview',
+    color: '#7a4520',
+    body: `<p><strong>GraphFolio</strong> — this very website. An experiment in representing a person as a navigable information network.</p>
+    <p><strong>MemoryMap</strong> — collaborative tool for archival researchers to spatially organize primary sources.</p>`,
+    tags: ['GraphFolio', 'MemoryMap', 'Visualization']
+  },
+  interests: {
+    category: 'Research · Theory',
+    title: 'Research Interests',
+    color: '#7a4520',
+    body: `<p>My work sits at the boundary of information behavior, network science, and critical data studies.</p>
+    <p>Broadly: how do people navigate, construct, and make sense of complex information spaces?</p>`,
+    tags: ['Information Behavior', 'Network Science', 'Critical Data Studies']
+  },
+  collaborators: {
+    category: 'Research · Community',
+    title: 'Collaborators',
+    color: '#7a4520',
+    body: `<p>Active collaborations with researchers at [Institution A], [Institution B], and the [Lab Name] in Copenhagen.</p>`,
+    tags: ['International', 'Interdisciplinary']
+  },
+  about: {
+    category: 'Personal · Bio',
+    title: 'About Me',
+    color: '#2d6b4a',
+    body: `<p>I'm a PhD student in Information Science with a background in library science and cognitive psychology.</p>
+    <p>Originally from [City], now based in [City]. I think in graphs and write in long sentences.</p>`,
+    tags: ['Bio', 'Background']
+  },
+  outside: {
+    category: 'Personal · Life',
+    title: 'Outside Academia',
+    color: '#2d6b4a',
+    body: `<p>Distance runner. Amateur mycologist. Intermittent ceramicist.</p>
+    <p>I keep a paper notebook for ideas that don't fit into any existing category.</p>`,
+    tags: ['Running', 'Mycology', 'Ceramics']
+  },
+  overview: {
+    category: 'Overview',
+    title: 'Profile and affiliations',
+    color: '#1a1a18',
+    body: `
+      <p>PhD student in Information Science, studying how the <em>structure</em> of knowledge systems shapes what can be known — and by whom.</p>
+      <p>My work spans knowledge graphs, information behavior, and critical data studies. I teach, publish, and build tools that let researchers navigate information spatially.</p>
+      <div style="margin: 24px 0; padding: 20px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div><div style="font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px;">Affiliation</div><div style="font-family:'Cormorant Garamond',serif;font-size:16px;">[University Name]<br>Information Spaces Lab</div></div>
+        <div><div style="font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px;">Status</div><div style="font-family:'Cormorant Garamond',serif;font-size:16px;">PhD Candidate<br>Est. completion 2026</div></div>
+        <div><div style="font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px;">Based in</div><div style="font-family:'Cormorant Garamond',serif;font-size:16px;">[City]</div></div>
+        <div><div style="font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px;">Contact</div><div style="font-family:'Cormorant Garamond',serif;font-size:16px;"><a href="mailto:m.massari@university.edu" style="color:var(--ink);text-underline-offset:3px">m.massari@<br>university.edu</a></div></div>
+      </div>`,
+    tags: ['Information Science', 'PhD', 'Knowledge Graphs', 'HCI']
+  },
+  contact: {
+    category: 'Contact',
+    title: 'Get in Touch',
+    color: '#8b2020',
+    body: `<p>Always happy to chat about research, collaborations, or shared interests.</p>
+    <p>📧 <a href="mailto:m.massari@university.edu">m.massari@university.edu</a></p>
+    <p>🔗 <a href="#">Google Scholar</a> · <a href="#">GitHub</a> · <a href="#">LinkedIn</a></p>`,
+    tags: ['Email', 'Scholar', 'GitHub']
+  }
+};
+
+const appliedProjects = [
+  {
+    id: 'transport', r: 12, color: '#7a4520', cat: 'Hephaestus AI',
+    label: 'TRANSPORT\nFLOW',
+    title: 'Predicting Transport Flow',
+    org: 'Hephaestus Applied AI Association — Bocconi',
+    period: 'Sep 2024 – Jan 2025',
+    body: `<p>Applied <strong>Spatio-Temporal Graph Transformers</strong> to mimic the construction of public transportation routes in Milan.</p>
+<p>Proposed an architecture with a specific focus on the role of <strong>attention mechanisms</strong> within the model, analysing how the network learns to weight spatial and temporal dependencies across the urban graph.</p>`,
+    tags: ['Spatio-Temporal', 'Graph Transformer', 'Attention', 'Milan', 'PyTorch'],
+    pdf: 'https://drive.google.com/file/d/YOUR_TRANSPORT_ID'
+  },
+  {
+    id: 'skimaps', r: 11, color: '#7a4520', cat: 'Hephaestus AI',
+    label: 'SKI\nMAPS',
+    title: 'Ski Maps',
+    org: 'Hephaestus Applied AI Association — Bocconi',
+    period: 'Feb 2024 – Sep 2024',
+    body: `<p>Led a team of 4 in developing the theoretical approach to a <strong>ski-resort navigation app</strong>, similar in concept to Google Maps but adapted for dynamic mountain environments.</p>
+<p>Main tools: the <strong>SARIMA model</strong> for temporal forecasting and a modified version of <strong>Dijkstra's algorithm</strong> on dynamic graphs satisfying the FIFO condition — ensuring route recommendations respect lift wait times and slope conditions.</p>`,
+    tags: ['SARIMA', 'Dijkstra', 'Dynamic Graphs', 'FIFO', 'Navigation', 'Team Lead'],
+    pdf: 'https://drive.google.com/file/d/YOUR_SKIMAPS_ID'
+  },
+  {
+    id: 'notary', r: 10, color: '#7a4520', cat: 'Hephaestus AI',
+    label: 'NOTARIAL\nACT GEN',
+    title: 'Notarial Act Generator',
+    org: 'Hephaestus Applied AI Association — Bocconi',
+    period: 'Sep 2023 – Jan 2024',
+    body: `<p>Created a small dataset of notarial clauses and <strong>fine-tuned GPT</strong> on it, producing a program that generates legally-structured notarial acts using the <strong>OpenAI API</strong>.</p>
+<p>The output is a <strong>formatted LaTeX file</strong> that is automatically compiled into a PDF, providing a complete end-to-end pipeline from clause selection to final document.</p>`,
+    tags: ['GPT Fine-tuning', 'OpenAI API', 'LaTeX', 'NLP', 'Document Generation'],
+    pdf: 'https://drive.google.com/file/d/YOUR_NOTARY_ID'
+  },
+  {
+    id: 'onlinelearning', r: 11, color: '#2d6b4a', cat: 'Statistics Assoc.',
+    label: 'ONLINE\nLEARNING',
+    title: 'Online Learning for Bilateral Trade',
+    org: 'Bocconi Students Statistics & Data Science Assoc.',
+    period: 'Mar 2025 – Jul 2025',
+    body: `<p>Analysed various models of <strong>Bilateral Trade</strong> and built preliminary <strong>stochastic learning algorithms</strong> to minimise regret on a finite time horizon with endogenously varying buy/sell valuations.</p>
+<p>The project sits at the intersection of online learning theory and international trade economics, formalising how an agent can optimally adjust trade decisions as market conditions evolve.</p>`,
+    tags: ['Online Learning', 'Bilateral Trade', 'Regret Minimisation', 'Stochastic Algorithms', 'Game Theory'],
+    pdf: null
+  },
+  {
+    id: 'dimreduction', r: 10, color: '#2d6b4a', cat: 'Statistics Assoc.',
+    label: 'DIMENSIONALITY\nREDUCTION',
+    title: 'Dimensionality Reduction Survey',
+    org: 'Bocconi Students Statistics & Data Science Assoc.',
+    period: 'Sep 2024 – Jan 2025',
+    body: `<p>Conducted a thorough analysis of the state of the art in <strong>dimensionality reduction techniques</strong>, with a special focus on <strong>Graph Neural Networks</strong>.</p>
+<p>Results were reached by analysing the literature and implementing and comparing the most relevant techniques — PCA, t-SNE, UMAP, and GNN-based approaches — in Python, with quantitative benchmarking across datasets.</p>`,
+    tags: ['Dimensionality Reduction', 'GNN', 'PCA', 't-SNE', 'UMAP', 'Python'],
+    pdf: null
+  },
+  {
+    id: 'simsearch', r: 11, color: '#3d4478', cat: 'Curricular',
+    label: 'SIMULTANEOUS\nSEARCH',
+    title: 'Simultaneous Search',
+    org: 'CS 6840 Algorithmic Game Theory — Cornell University',
+    period: 'Nov 2025 – Dec 2025',
+    body: `<p>Starting with a model of graduate school applications, studied <strong>simultaneous search</strong> with a finite time resource that endogenously raises independent acceptance probabilities, while payoffs are ranked ex post and only the best success is consumed.</p>
+<p>The project formalises the strategic tension between applying broadly (raising success probabilities) and the opportunity cost of time, connecting to prophet inequalities and secretary problems in mechanism design.</p>`,
+    tags: ['Algorithmic Game Theory', 'Simultaneous Search', 'Mechanism Design', 'Optimal Stopping'],
+    pdf: null
+  },
+  {
+    id: 'threesat', r: 10, color: '#3d4478', cat: 'Curricular',
+    label: '3-SAT\nANALYSIS',
+    title: '3-SAT Heuristic Analysis',
+    org: 'CS 30509 Computer Programming — Bocconi University',
+    period: 'Nov 2024 – Dec 2024',
+    body: `<p>Investigated the efficiency of <strong>simulated annealing</strong> on satisfiability problems, specifically <strong>3-SAT</strong>, using NumPy.</p>
+<p>The analysis confirms results in the relevant literature regarding the phase-transition behaviour of random 3-SAT near the critical clause-to-variable ratio, and evaluates the performance of simulated annealing against brute-force search across problem sizes.</p>`,
+    tags: ['Simulated Annealing', '3-SAT', 'Satisfiability', 'NumPy', 'Phase Transition'],
+    pdf: 'https://drive.google.com/file/d/YOUR_3SAT_ID'
+  },
+  {
+    id: 'aiagriculture', r: 10, color: '#3d4478', cat: 'Curricular',
+    label: 'AI IN\nAGRICULTURE',
+    title: 'Artificial Intelligence in Agriculture',
+    org: 'IB Extended Essay — St. Louis High School',
+    period: 'Jun 2022 – Mar 2023',
+    body: `<p>Explored the impact of AI on <strong>water resources</strong> through an interdisciplinary lens, using FAO AQUASTAT data to analyse how ML can minimise agriculture's freshwater footprint in Spain.</p>
+<p>Compared <strong>Multi-Layer Neural Networks</strong>, <strong>Support Vector Regression</strong>, and Intelligent Autonomous Agents across prediction tasks. One of the first independent research projects; established a lasting interest in applied machine learning.</p>`,
+    tags: ['SVR', 'Neural Networks', 'Water Resources', 'FAO AQUASTAT', 'Agriculture', 'IB'],
+    pdf: 'https://drive.google.com/file/d/YOUR_EE_ID'
+  },
+  {
+    id: 'humanrights', r: 9, color: '#1a1a18', cat: 'Other',
+    label: 'HUMAN RIGHTS\nMILAN',
+    title: 'Human Rights Across Milan',
+    org: 'Amnesty International — Milan',
+    period: 'Oct 2022 – Feb 2023',
+    body: `<p>Built a <strong>bilingual website (Italian/English)</strong> mapping a walking tour of Milan passing by locations — monuments, event sites, buildings — significant to human rights or their violation.</p>
+<p>Each location links to a page with historical context and significance. The project combines web development, archival research, and civic engagement, and was completed in collaboration with the local Amnesty International chapter.</p>`,
+    tags: ['Web Development', 'Human Rights', 'Amnesty International', 'Bilingual', 'Milan'],
+    pdf: null
+  }
+];
+
+for (const project of appliedProjects) {
+  const pdf = project.pdf && !project.pdf.includes('YOUR_')
+    ? `<p><a href="${project.pdf}" target="_blank" rel="noopener">View PDF</a></p>`
+    : '';
+  nodeContent[`applied-${project.id}`] = {
+    category: project.cat,
+    title: project.title,
+    color: project.color,
+    body: `<p><strong>${project.org}</strong><br>${project.period}</p>${project.body}${pdf}`,
+    tags: project.tags,
+  };
+}
+
+// Graph node definitions
+const mainNodes = [
+  { id: 'me',         label: 'ME',         type: 'center',  color: '#1a1a18', r: 18, content: 'overview', fx: null, fy: null },
+  { id: 'university', label: 'UNIVERSITY', type: 'main',    color: '#3d4478', r: 11 },
+  { id: 'research',   label: 'RESEARCH',   type: 'main',    color: '#7a4520', r: 11 },
+  { id: 'personal',   label: 'PERSONAL',   type: 'main',    color: '#2d6b4a', r: 11 },
+  { id: 'contact',    label: 'CONTACT ME', type: 'leaf',    color: '#8b2020', r: 9,  content: 'contact' },
+];
+
+const subNodes = {
+  university: [
+    { id: 'thesis',       label: 'THESIS',       type: 'leaf', color: '#3d4478', r: 7, content: 'thesis' },
+    { id: 'publications', label: 'PUBLICATIONS', type: 'leaf', color: '#3d4478', r: 7, content: 'publications' },
+    { id: 'courses',      label: 'COURSES',      type: 'leaf', color: '#3d4478', r: 7, content: 'courses' },
+    { id: 'lab',          label: 'LAB',          type: 'leaf', color: '#3d4478', r: 7, content: 'lab' },
+  ],
+  research: [
+    { id: 'projects',     label: 'PROJECTS',     type: 'hub',  color: '#7a4520', r: 9 },
+    { id: 'interests',    label: 'INTERESTS',    type: 'leaf', color: '#7a4520', r: 7, content: 'interests' },
+    { id: 'collaborators',label: 'COLLABORATORS',type: 'leaf', color: '#7a4520', r: 7, content: 'collaborators' },
+  ],
+  projects: [
+    { id: 'project-overview', label: 'PROJECT OVERVIEW', type: 'leaf', color: '#7a4520', r: 7, content: 'projects' },
+    { id: 'proj-graphfolio',  label: 'GRAPHFOLIO',  type: 'project', color: '#b06030', r: 7, url: 'https://github.com/' },
+    { id: 'proj-memorymap',   label: 'MEMORYMAP',   type: 'project', color: '#b06030', r: 7, url: 'https://github.com/' },
+    { id: 'proj-thesis-tool', label: 'THESIS TOOL', type: 'project', color: '#b06030', r: 7, url: 'https://github.com/' },
+    { id: 'applied-projects', label: 'APPLIED PROJECTS', type: 'hub', color: '#7a4520', r: 9 },
+  ],
+  'applied-projects': appliedProjects.map(project => ({
+    id: `applied-${project.id}`, label: project.label.replace(/\n/g, ' '),
+    type: 'leaf', color: project.color, r: 7, content: `applied-${project.id}`,
+  })),
+  personal: [
+    { id: 'about',        label: 'ABOUT',        type: 'leaf', color: '#2d6b4a', r: 7, content: 'about' },
+    { id: 'outside',      label: 'OUTSIDE',      type: 'leaf', color: '#2d6b4a', r: 7, content: 'outside' },
+  ]
+};
+
+const mainLinks = [
+  { source: 'me', target: 'university' },
+  { source: 'me', target: 'research' },
+  { source: 'me', target: 'personal' },
+  { source: 'me', target: 'contact' },
+];
+
+const networkView = document.getElementById('network-view');
+const networkNote = document.getElementById('network-note');
+const cvView = document.getElementById('cv-view');
+const toggle = document.getElementById('network-toggle');
+const panel = document.getElementById('panel');
+const panelClose = panel.querySelector('.panel-close');
+const breadcrumb = document.getElementById('breadcrumb');
+
+function detailsBody(data) {
+  return `
+    <div class="panel-body">${data.body}</div>
+    <div class="panel-tags">${data.tags.map(tag => `<span class="panel-tag">${tag}</span>`).join('')}</div>
+  `;
+}
+
+function cvEntry(node, topLevel = false) {
+  const data = nodeContent[node.content];
+  const children = subNodes[node.id] || [];
+  const title = data?.title || node.label.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+  if (!data && !children.length) return `<p class="cv-project-name">${title}</p>`;
+
+  return `
+    <details class="${topLevel ? 'cv-group' : 'cv-entry'}"${topLevel && children.length ? ' open' : ''}>
+      <summary>${title}</summary>
+      <div class="cv-entries">
+        ${data ? detailsBody(data) : ''}
+        ${children.map(child => cvEntry(child)).join('')}
+      </div>
+    </details>
+  `;
+}
+
+document.getElementById('cv-sections').innerHTML = mainNodes.map(node => cvEntry(node, true)).join('');
+
+// ─── STATE ──────────────────────────────────────────────────────────────
+const expanded = new Set();
+let simulation, svg, linkG, nodeG;
+let currentNodes = [...mainNodes];
+let currentLinks = [...mainLinks];
+let width, height;
+let panelTrigger;
+
+// ─── INIT ────────────────────────────────────────────────────────────────
+function measureGraph() {
+  const container = document.getElementById('graph-container');
+  width = Math.max(650, container.clientWidth);
+  height = Math.max(480, container.clientHeight);
+  svg.attr('viewBox', `0 0 ${width} ${height}`);
+}
+
+function init() {
+  svg = d3.select('#graph')
+    .call(d3.zoom()
+      .scaleExtent([0.3, 3])
+      .on('zoom', (event) => {
+        graphGroup.attr('transform', event.transform);
+      })
+    );
+
+  measureGraph();
+  svg.on('click', () => closePanel(true));
+
+  const graphGroup = svg.append('g').attr('id', 'graph-group');
+  linkG = graphGroup.append('g').attr('class', 'links');
+  nodeG = graphGroup.append('g').attr('class', 'nodes');
+
+  simulation = d3.forceSimulation()
+    .force('link', d3.forceLink().id(d => d.id).distance(d => {
+      if (d.source.id === 'me' || d.target.id === 'me') return 160;
+      return 100;
+    }).strength(0.8))
+    .force('charge', d3.forceManyBody().strength(-320))
+    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('collision', d3.forceCollide().radius(d => d.r + 30));
+
+  render();
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────
+function render() {
+  // Update links
+  const links = linkG.selectAll('.link')
+    .data(currentLinks, d => `${d.source.id || d.source}-${d.target.id || d.target}`);
+
+  links.exit().remove();
+
+  links.enter().append('line')
+    .attr('class', d => {
+      const src = d.source.id || d.source;
+      const tgt = d.target.id || d.target;
+      const isMain = src === 'me' || tgt === 'me';
+      return 'link' + (isMain ? '' : ' sub-link');
+    })
+    .style('opacity', 0)
+    .transition().duration(400).style('opacity', null);
+
+  // Update nodes
+  const nodes = nodeG.selectAll('.node-group')
+    .data(currentNodes, d => d.id);
+
+  nodes.exit().remove();
+
+  const entered = nodes.enter().append('g')
+    .attr('class', 'node-group')
+    .attr('role', 'button')
+    .attr('tabindex', 0)
+    .attr('aria-label', d => d.type === 'center' ? 'Profile and affiliations' : d.label)
+    .style('opacity', 0)
+    .call(d3.drag()
+      .on('start', dragStart)
+      .on('drag', dragged)
+      .on('end', dragEnd)
+    )
+    .on('click', onNodeClick)
+    .on('keydown', (event, d) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        onNodeClick(event, d);
+      }
+    });
+
+  entered.merge(nodes)
+    .attr('aria-expanded', d => subNodes[d.id] ? String(expanded.has(d.id)) : null);
+
+  entered.append('circle')
+    .attr('class', 'node-circle')
+    .attr('r', d => d.r)
+    .attr('fill', d => d.color)
+    .attr('stroke', d => d.type === 'project' ? '#b06030' : 'none')
+    .attr('stroke-width', d => d.type === 'project' ? 2 : 0)
+    .style('stroke-dasharray', d => d.type === 'project' ? '3 2' : 'none');
+
+  entered.append('text')
+    .attr('class', 'node-label')
+    .attr('dy', d => d.r + 16)
+    .attr('text-anchor', 'middle')
+    .text(d => d.type === 'center' ? '' : d.type === 'project' ? d.label + ' ↗' : d.label);
+
+  entered.transition().duration(400).style('opacity', 1);
+
+  simulation
+    .nodes(currentNodes)
+    .on('tick', ticked);
+
+  simulation.force('link').links(currentLinks);
+  simulation.alpha(0.5).restart();
+  updateNetworkStats();
+}
+
+function updateNetworkStats() {
+  const neighbors = new Map(currentNodes.map(node => [node.id, []]));
+  for (const link of currentLinks) {
+    const source = link.source.id ?? link.source;
+    const target = link.target.id ?? link.target;
+    neighbors.get(source).push(target);
+    neighbors.get(target).push(source);
+  }
+
+  const nodes = neighbors.size;
+  const links = currentLinks.length;
+  const density = nodes > 1 ? (2 * links) / (nodes * (nodes - 1)) : 0;
+  document.getElementById('network-node-count').textContent = nodes;
+  document.getElementById('network-link-count').textContent = links;
+  document.getElementById('network-diameter').textContent = networkDiameter(neighbors);
+  document.getElementById('network-density').textContent = `${(density * 100).toFixed(1)}%`;
+}
+
+function networkDiameter(neighbors) {
+  let diameter = 0;
+  for (const start of neighbors.keys()) {
+    // Breadth-first traversal finds the shortest path to every reachable node.
+    const queue = [start];
+    const distances = new Map([[start, 0]]);
+    for (let i = 0; i < queue.length; i++) {
+      const distance = distances.get(queue[i]) + 1;
+      for (const neighbor of neighbors.get(queue[i])) {
+        if (distances.has(neighbor)) continue;
+        distances.set(neighbor, distance);
+        queue.push(neighbor);
+        diameter = Math.max(diameter, distance);
+      }
+    }
+    if (distances.size !== neighbors.size) return '—';
+  }
+  return diameter;
+}
+
+function ticked() {
+  linkG.selectAll('.link')
+    .attr('x1', d => d.source.x)
+    .attr('y1', d => d.source.y)
+    .attr('x2', d => d.target.x)
+    .attr('y2', d => d.target.y);
+
+  nodeG.selectAll('.node-group')
+    .attr('transform', d => `translate(${d.x},${d.y})`);
+}
+
+// ─── INTERACTIONS ────────────────────────────────────────────────────────
+function onNodeClick(event, d) {
+  event.stopPropagation();
+  if (d.type === 'center') {
+    showPanel(d.content, event.currentTarget);
+    return;
+  }
+
+  if (d.type === 'project') {
+    // Open project URL in new tab
+    if (d.url) window.open(d.url, '_blank', 'noopener');
+    return;
+  }
+
+  if (d.type === 'leaf') {
+    if (d.content && nodeContent[d.content]) showPanel(d.content, event.currentTarget);
+    return;
+  }
+
+  // main and hub both expand/collapse subgraphs
+  if (d.type === 'main' || d.type === 'hub') {
+    if (expanded.has(d.id)) {
+      collapse(d.id);
+    } else {
+      expand(d.id);
+    }
+  }
+}
+
+function expand(parentId) {
+  expanded.add(parentId);
+  const children = subNodes[parentId] || [];
+  const parent = currentNodes.find(n => n.id === parentId);
+
+  children.forEach(child => {
+    if (!currentNodes.find(n => n.id === child.id)) {
+      // start near parent
+      currentNodes.push({ ...child, x: parent.x + (Math.random()-0.5)*40, y: parent.y + (Math.random()-0.5)*40 });
+      currentLinks.push({ source: parentId, target: child.id });
+    }
+  });
+
+  // Mark parent as expanded
+  const parentNode = nodeG.selectAll('.node-group').filter(d => d.id === parentId);
+  parentNode.select('circle').transition().duration(200).attr('r', 13);
+
+  render();
+  updateBreadcrumb();
+}
+
+function collapse(parentId) {
+  // First recursively collapse any hub children that are expanded
+  const children = subNodes[parentId];
+  for (const child of children) {
+    if (expanded.has(child.id)) collapse(child.id);
+  }
+
+  expanded.delete(parentId);
+  const childIds = new Set(children.map(node => node.id));
+
+  if (panelTrigger && childIds.has(panelTrigger.__data__?.id)) closePanel();
+
+  currentNodes = currentNodes.filter(n => !childIds.has(n.id));
+  currentLinks = currentLinks.filter(l => {
+    const src = l.source.id || l.source;
+    const tgt = l.target.id || l.target;
+    return !childIds.has(src) && !childIds.has(tgt);
+  });
+
+  nodeG.selectAll('.node-group').filter(d => d.id === parentId)
+    .select('circle').transition().duration(200).attr('r', d => d.r);
+
+  render();
+  updateBreadcrumb();
+}
+
+function updateBreadcrumb() {
+  breadcrumb.hidden = expanded.size === 0;
+}
+
+function goBack() {
+  for (const id of [...expanded]) {
+    if (expanded.has(id)) collapse(id);
+  }
+  nodeG.selectAll('.node-group').filter(d => d.type === 'center').node().focus();
+}
+
+function showPanel(key, trigger) {
+  const data = nodeContent[key];
+  if (!data) return;
+  panelTrigger = trigger;
+
+  document.getElementById('panel-content').innerHTML = `
+    <div class="panel-category">
+      <span class="panel-dot" style="background:${data.color}"></span>${data.category}
+    </div>
+    <h2 class="panel-title" id="panel-title">${data.title}</h2>
+    <div class="panel-divider"></div>
+    ${detailsBody(data)}
+  `;
+  panel.hidden = false;
+  panel.scrollTop = 0;
+  panelClose.focus();
+}
+
+function closePanel(restoreFocus = false) {
+  if (panel.hidden) return;
+  panel.hidden = true;
+  if (restoreFocus) panelTrigger?.focus();
+  panelTrigger = null;
+}
+
+// Drag
+function dragStart(event, d) {
+  if (!event.active) simulation.alphaTarget(0.3).restart();
+  d.fx = d.x; d.fy = d.y;
+}
+function dragged(event, d) {
+  d.fx = event.x; d.fy = event.y;
+}
+function dragEnd(event, d) {
+  if (!event.active) simulation.alphaTarget(0);
+  if (d.type !== 'center') { d.fx = null; d.fy = null; }
+}
+
+function resizeGraph() {
+  measureGraph();
+  simulation.force('center', d3.forceCenter(width / 2, height / 2));
+  simulation.alpha(0.3).restart();
+}
+
+function setNetwork(enabled) {
+  networkView.hidden = !enabled;
+  networkNote.hidden = !enabled;
+  cvView.hidden = enabled;
+  toggle.setAttribute('aria-pressed', String(enabled));
+  if (enabled) {
+    if (simulation) resizeGraph();
+    else init();
+  } else {
+    closePanel();
+    simulation.stop();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (!window.d3) return;
+  setNetwork(true);
+  toggle.hidden = false;
+  toggle.addEventListener('click', () => setNetwork(networkView.hidden));
+  breadcrumb.addEventListener('click', goBack);
+  panelClose.addEventListener('click', () => closePanel(true));
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closePanel(true);
+  });
+  window.addEventListener('resize', () => {
+    if (!networkView.hidden) resizeGraph();
+  });
+});
+</script>
+
+</body>
+</html>
