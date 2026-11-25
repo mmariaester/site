@@ -285,6 +285,13 @@
 
   .panel-body p { margin-bottom: 14px; }
 
+  .panel-notebook {
+    display: block;
+    width: min(180px, 100%);
+    height: auto;
+    margin: 18px auto 22px;
+  }
+
   .panel-body a {
     color: var(--ink);
     text-decoration: underline;
@@ -380,11 +387,16 @@
 <div class="site">
   <aside class="profile" aria-label="About Maria Ester Massari">
     <h1><span class="first">Maria Ester</span> <span class="last">Massari</span></h1>
-    <p class="profile-role">Information Science PhD Student</p>
-    <p>I’m interested in how people make sense of complex information. My projects explore how graphs, data science, and machine learning can help us understand systems such as transport networks and online markets.</p>
+    <p class="profile-role">InfoSci PhD Student <br> Cornell University</p>
+    <p>Hi, my name is Maria Ester! I’m broadly interested in how agents reason (rationally and irrationally), how this can shape their interactions, and the resulting social and economic consequences. </p>
     <section class="network-note" id="network-note" aria-labelledby="network-note-title" hidden>
       <h2 id="network-note-title">About the network</h2>
-      <p>I made this network to show how my university work, research, and personal interests connect. Each branch opens into more specific topics.</p>
+      <p>
+        This network serves two purposes: <br>
+        1. It is my way of having fun with graphs, which I enjoy playing around with; <br>
+        2. It allows me to make a case on how I see the various aspects of my life be connected. <br> <br>
+        Each node can be seen as a topic, with varying broadness. Each edge, instead connectes two nodes if I can reasonably see myself making a direct and logical transition between them during an everyday conversation. 
+      </p>
     </section>
   </aside>
 
@@ -490,16 +502,17 @@ const nodeContent = {
     category: 'Personal · Bio',
     title: 'About Me',
     color: '#2d6b4a',
-    body: `<p>I'm a PhD student in Information Science with a background in library science and cognitive psychology.</p>
-    <p>Originally from [City], now based in [City]. I think in graphs and write in long sentences.</p>`,
+    body: `<p>I'm a PhD student in Information Science with a background in Economics, Management, and Computer Science.</p>
+    <p>I was born and raised in Milan, Italy, and am now based in Ithaca, NY.</p>`,
     tags: ['Bio', 'Background']
   },
   outside: {
     category: 'Personal · Life',
-    title: 'Outside Academia',
+    title: 'Hobbies etc.',
     color: '#2d6b4a',
-    body: `<p>Distance runner. Amateur mycologist. Intermittent ceramicist.</p>
-    <p>I keep a paper notebook for ideas that don't fit into any existing category.</p>`,
+    body: `<p>Not that anyone asked, but I enjoy skiing and sailing. In my free time, I love making stuff, whether that is using fabric, wood, plastic, or anything inbetween. However, I truly cannot paint. </p>
+    <p>I got inspired to keep a paper notebook, that I am very attached to.</p>`,
+    panelImage: `<img class="panel-notebook" src="book.png" width="540" height="825" alt="Dark gray Field Notes notebook with a floral cover">`,
     tags: ['Running', 'Mycology', 'Ceramics']
   },
   overview: {
@@ -513,7 +526,7 @@ const nodeContent = {
         <div><div style="font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px;">Affiliation</div><div style="font-family:'Cormorant Garamond',serif;font-size:16px;">[University Name]<br>Information Spaces Lab</div></div>
         <div><div style="font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px;">Status</div><div style="font-family:'Cormorant Garamond',serif;font-size:16px;">PhD Candidate<br>Est. completion 2026</div></div>
         <div><div style="font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px;">Based in</div><div style="font-family:'Cormorant Garamond',serif;font-size:16px;">[City]</div></div>
-        <div><div style="font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px;">Contact</div><div style="font-family:'Cormorant Garamond',serif;font-size:16px;"><a href="mailto:m.massari@university.edu" style="color:var(--ink);text-underline-offset:3px">m.massari@<br>university.edu</a></div></div>
+        <div><div style="font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px;">Contact</div><div style="font-family:'Cormorant Garamond',serif;font-size:16px;"><a href="mailto:mm3549@cornell.edu" style="color:var(--ink);text-underline-offset:3px">mm3549 'at' cornell 'dot' edu</a></div></div>
       </div>`,
     tags: ['Information Science', 'PhD', 'Knowledge Graphs', 'HCI']
   },
@@ -521,10 +534,10 @@ const nodeContent = {
     category: 'Contact',
     title: 'Get in Touch',
     color: '#8b2020',
-    body: `<p>Always happy to chat about research, collaborations, or shared interests.</p>
-    <p>📧 <a href="mailto:m.massari@university.edu">m.massari@university.edu</a></p>
-    <p>🔗 <a href="#">Google Scholar</a> · <a href="#">GitHub</a> · <a href="#">LinkedIn</a></p>`,
-    tags: ['Email', 'Scholar', 'GitHub']
+    body: `<p>I'm always happy to chat, about research, hobbies, or anything really!</p>
+    <p>📧 <a href="mailto:mm3549@cornell.edu">mm3549 'at' cornell 'dot' edu</a></p>
+    <p>🔗 <a href="https://www.linkedin.com/in/maria-ester-massari/">LinkedIn</a></p>`,
+    tags: ['Email', 'LinkedIn']
   }
 };
 
@@ -696,9 +709,9 @@ const panel = document.getElementById('panel');
 const panelClose = panel.querySelector('.panel-close');
 const breadcrumb = document.getElementById('breadcrumb');
 
-function detailsBody(data) {
+function detailsBody(data, panelImage = '') {
   return `
-    <div class="panel-body">${data.body}</div>
+    <div class="panel-body">${data.body}${panelImage}</div>
     <div class="panel-tags">${data.tags.map(tag => `<span class="panel-tag">${tag}</span>`).join('')}</div>
   `;
 }
@@ -984,7 +997,7 @@ function showPanel(key, trigger) {
     </div>
     <h2 class="panel-title" id="panel-title">${data.title}</h2>
     <div class="panel-divider"></div>
-    ${detailsBody(data)}
+    ${detailsBody(data, data.panelImage)}
   `;
   panel.hidden = false;
   panel.scrollTop = 0;
