@@ -456,6 +456,15 @@
 <script>
 // ─── DATA ───────────────────────────────────────────────────────────────
 const nodeContent = {
+  'bocconi-education': {
+    category: 'University',
+    title: 'Bocconi University · 2023–2026',
+    color: '#3d4478',
+    body: `<p>Graduated with <strong>110/110 cum laude</strong>.</p>
+    <p><strong>Thesis:</strong> <em>Learning Without Self-Coupling: Stabilization through Strong Connections in Asymmetric Recurrent Networks</em></p>
+    <p>Supervisor: Prof. Riccardo Zecchina.</p>`,
+    tags: []
+  },
   thesis: {
     category: 'University · Research',
     title: 'Undergraduate Thesis',
@@ -504,12 +513,11 @@ const nodeContent = {
     title: 'Profile and affiliations',
     color: '#1a1a18',
     body: `
-      <p>PhD student in Information Science, studying how the <em>structure</em> of knowledge systems shapes what can be known — and by whom.</p>
-      <p>My work spans knowledge graphs, information behavior, and critical data studies. I teach, publish, and build tools that let researchers navigate information spatially.</p>
+      <p>PhD student in Information Science, interested in reasoning - rational and irrational - and its causes, and its consequences.</p>
       <div style="margin: 24px 0; padding: 20px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-        <div><div style="font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px;">Affiliation</div><div style="font-family:'Cormorant Garamond',serif;font-size:16px;">[University Name]<br>Information Spaces Lab</div></div>
-        <div><div style="font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px;">Status</div><div style="font-family:'Cormorant Garamond',serif;font-size:16px;">PhD Candidate<br>Est. completion 2026</div></div>
-        <div><div style="font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px;">Based in</div><div style="font-family:'Cormorant Garamond',serif;font-size:16px;">[City]</div></div>
+        <div><div style="font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px;">Affiliation</div><div style="font-family:'Cormorant Garamond',serif;font-size:16px;">Cornell University<br></div></div>
+        <div><div style="font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px;">Status</div><div style="font-family:'Cormorant Garamond',serif;font-size:16px;">PhD Student<br>Est. completion 2031</div></div>
+        <div><div style="font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px;">Based in</div><div style="font-family:'Cormorant Garamond',serif;font-size:16px;">Ithaca, NY</div></div>
         <div><div style="font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-light);margin-bottom:8px;">Contact</div><div style="font-family:'Cormorant Garamond',serif;font-size:16px;"><a href="mailto:mm3549@cornell.edu" style="color:var(--ink);text-underline-offset:3px">mm3549 'at' cornell 'dot' edu</a></div></div>
       </div>`,
     tags: ['Information Science', 'PhD', 'Knowledge Graphs', 'HCI']
@@ -719,7 +727,10 @@ function detailsBody(data, panelImage = '') {
 
 function cvEntry(node, topLevel = false) {
   const data = nodeContent[node.content];
-  const children = subNodes[node.id] || [];
+  const children = [
+    ...(node.id === 'university' ? [{ id: 'bocconi-education', content: 'bocconi-education' }] : []),
+    ...(subNodes[node.id] || [])
+  ];
   const title = data?.title || node.label.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
   if (!data?.body && !data?.tags.length && !children.length) return `<p class="cv-project-name">${title}</p>`;
 
