@@ -491,6 +491,43 @@ const nodeContent = {
     body: '',
     tags: []
   },
+  leadership: {
+    category: 'Leadership & Volunteering',
+    title: 'Leadership & Volunteering',
+    color: '#66536f',
+    body: '',
+    tags: []
+  },
+  'summer-school-ambassador': {
+    category: 'Leadership & Volunteering',
+    title: 'Student Ambassador, Bocconi Summer School',
+    color: '#66536f',
+    body: `<p><strong>Bocconi University, Milan, Italy</strong><br>Jul 2025</p>
+    <p>Supported the Data Science Lab for more than 100 students and supervised student activities.</p>`,
+    tags: []
+  },
+  'hephaestus-board': {
+    category: 'Leadership & Volunteering',
+    title: 'Board Member, Hephaestus Applied Artificial Intelligence Association',
+    color: '#66536f',
+    body: `<p><strong>Bocconi University, Milan, Italy</strong><br>Sep 2024 – Sep 2025</p>
+    <p>Interviewed prospective members and helped decide admissions. Organized internal events on ongoing research and external events with other associations, Bocconi faculty, and experts from Microsoft.</p>`,
+    tags: []
+  },
+  'amnesty-volunteering': {
+    category: 'Leadership & Volunteering',
+    title: 'Amnesty International',
+    color: '#66536f',
+    body: `<p>Collaborated with the Milan chapter on a bilingual website for a walking tour of sites connected to human rights.</p>`,
+    tags: []
+  },
+  journalism: {
+    category: 'Leadership & Volunteering',
+    title: 'Journalism',
+    color: '#66536f',
+    body: '',
+    tags: []
+  },
   about: {
     category: 'Personal · Bio',
     title: 'About Me',
@@ -535,6 +572,27 @@ const nodeContent = {
 
 const projects = [
   {
+    id: 'correlated-reasoning', color: '#7a4520', cat: 'Research',
+    label: 'CORRELATED ERRORS',
+    title: 'Empirical Investigation on Correlated Reasoning Traces',
+    body: `<p>Investigating whether using a large language model for assistance on a reasoning task can lead to <strong>correlated errors</strong>. The study is motivated by the risks of algorithmic monoculture, where reliance on the same system can produce similar mistakes across users.</p>`,
+    tags: ['Large Language Models', 'Reasoning', 'Correlated Errors', 'Algorithmic Monoculture']
+  },
+  {
+    id: 'social-games', color: '#7a4520', cat: 'Research',
+    label: 'SOCIAL GAMES',
+    title: 'Social Games',
+    body: `<p>Building on a theoretical analysis of games in which one player's utility depends on another's. The project explores how these games can explain collective behavior such as mass hysteria and financial bubbles, and how incentives might reproduce altruistic behavior.</p>`,
+    tags: ['Game Theory', 'Collective Behavior', 'Incentives', 'Altruism']
+  },
+  {
+    id: 'hopfield', color: '#7a4520', cat: 'Research',
+    label: 'HOPFIELD UPDATE RULE',
+    title: 'Evolving a Hopfield Update Rule',
+    body: `<p>Used <strong>evolutionary computing</strong> to evolve an update rule for a Hopfield network that is robust to catastrophic forgetting.</p>`,
+    tags: ['Hopfield Networks', 'Evolutionary Computing', 'Catastrophic Forgetting']
+  },
+  {
     id: 'transport', r: 12, color: '#7a4520', cat: 'Hephaestus AI',
     label: 'TRANSPORT\nFLOW',
     title: 'Predicting Transport Flow',
@@ -551,7 +609,7 @@ const projects = [
     title: 'Ski Maps',
     org: 'Hephaestus Applied AI Association — Bocconi',
     period: 'Feb 2024 – Sep 2024',
-    body: `<p>Led a team of 4 in developing the theoretical approach to a <strong>ski-resort navigation app</strong>, similar in concept to Google Maps but adapted for dynamic mountain environments.</p>
+    body: `<p>Led a team of four in designing a theoretical framework for <strong>offline navigation at ski resorts</strong>, accounting for changing mountain conditions.</p>
 <p>Main tools: the <strong>SARIMA model</strong> for temporal forecasting and a modified version of <strong>Dijkstra's algorithm</strong> on dynamic graphs satisfying the FIFO condition — ensuring route recommendations respect lift wait times and slope conditions.</p>`,
     tags: ['SARIMA', 'Dijkstra', 'Dynamic Graphs', 'FIFO', 'Navigation', 'Team Lead'],
     pdf: 'https://drive.google.com/file/d/YOUR_SKIMAPS_ID'
@@ -581,7 +639,7 @@ const projects = [
   {
     id: 'dimreduction', r: 10, color: '#2d6b4a', cat: 'Statistics Assoc.',
     label: 'DIMENSIONALITY\nREDUCTION',
-    title: 'Dimensionality Reduction Survey',
+    title: 'Dimensionality Reduction with Graph Methods',
     org: 'Bocconi Students Statistics & Data Science Assoc.',
     period: 'Sep 2024 – Jan 2025',
     body: `<p>Conducted a thorough analysis of the state of the art in <strong>dimensionality reduction techniques</strong>, with a special focus on <strong>Graph Neural Networks</strong>.</p>
@@ -592,7 +650,7 @@ const projects = [
   {
     id: 'simsearch', r: 11, color: '#3d4478', cat: 'Curricular',
     label: 'SIMULTANEOUS\nSEARCH',
-    title: 'Simultaneous Search',
+    title: 'Time Budget Allocation in Simultaneous Search',
     org: 'CS 6840 Algorithmic Game Theory — Cornell University',
     period: 'Nov 2025 – Dec 2025',
     body: `<p>Starting with a model of graduate school applications, studied <strong>simultaneous search</strong> with a finite time resource that endogenously raises independent acceptance probabilities, while payoffs are ranked ex post and only the best success is consumed.</p>
@@ -639,11 +697,12 @@ for (const project of projects) {
   const pdf = project.pdf && !project.pdf.includes('YOUR_')
     ? `<p><a href="${project.pdf}" target="_blank" rel="noopener">View PDF</a></p>`
     : '';
+  const context = project.org ? `<p><strong>${project.org}</strong><br>${project.period}</p>` : '';
   nodeContent[`project-${project.id}`] = {
     category: project.cat,
     title: project.title,
     color: project.color,
-    body: `<p><strong>${project.org}</strong><br>${project.period}</p>${project.body}${pdf}`,
+    body: `${context}${project.body}${pdf}`,
     tags: project.tags,
   };
 }
@@ -654,6 +713,7 @@ const mainNodes = [
   { id: 'university', label: 'UNIVERSITY', type: 'main',    color: 'url(#university-teaching-fill)', r: 11 },
   { id: 'research',   label: 'RESEARCH',   type: 'main',    color: '#7a4520', r: 11 },
   { id: 'personal',   label: 'PERSONAL',   type: 'main',    color: '#2d6b4a', r: 11 },
+  { id: 'leadership', label: 'LEADERSHIP & VOLUNTEERING', type: 'main', color: nodeContent.leadership.color, r: 11, content: 'leadership' },
   { id: 'contact',    label: 'CONTACT ME', type: 'leaf',    color: '#8b2020', r: 9,  content: 'contact' },
 ];
 
@@ -680,7 +740,15 @@ const subNodes = {
   personal: [
     { id: 'about',        label: 'ABOUT',        type: 'leaf', color: '#2d6b4a', r: 7, content: 'about' },
     { id: 'hobbies',      label: 'HOBBIES',      type: 'leaf', color: '#2d6b4a', r: 7, content: 'hobbies' },
-  ]
+  ],
+  leadership: [
+    { id: 'summer-school-ambassador', label: 'SUMMER SCHOOL' },
+    { id: 'hephaestus-board', label: 'HEPHAESTUS BOARD' },
+    { id: 'amnesty-volunteering', label: 'AMNESTY INTERNATIONAL' },
+    { id: 'journalism', label: 'JOURNALISM' },
+  ].map(({ id, label }) => ({
+    id, label, type: 'leaf', color: nodeContent[id].color, r: 7, content: id,
+  })),
 };
 
 for (const { content, label, color } of subNodes.teaching) {
@@ -707,6 +775,7 @@ const mainLinks = [
   { source: 'me', target: 'university' },
   { source: 'me', target: 'research' },
   { source: 'me', target: 'personal' },
+  { source: 'me', target: 'leadership' },
   { source: 'me', target: 'contact' },
 ];
 
@@ -728,8 +797,13 @@ function detailsBody(data, panelImage = '') {
 function cvEntry(node, topLevel = false) {
   const data = nodeContent[node.content];
   const children = [
-    ...(node.id === 'university' ? [{ id: 'bocconi-education', content: 'bocconi-education' }] : []),
-    ...(subNodes[node.id] || [])
+    ...(node.id === 'university' ? [
+      { id: 'bocconi-education', content: 'bocconi-education' },
+      { id: 'cornell-exchange', label: 'Cornell University - Exchange Program' }
+    ] : []),
+    ...(subNodes[node.id] || []).filter(child =>
+      node.id !== 'university' || !['thesis', 'bocconi-graduation'].includes(child.id)
+    )
   ];
   const title = data?.title || node.label.toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
   if (!data?.body && !data?.tags.length && !children.length) return `<p class="cv-project-name">${title}</p>`;
